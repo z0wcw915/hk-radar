@@ -187,7 +187,7 @@
     const SIX_MINUTES_MS = 6 * 60 * 1000;
     
     // Exact starting anchor timestamp: 2026-08-26 23:36:00 UTC
-    const ANCHOR_TIME_MS = Date.UTC(2026, 7, 26, 23, 36, 0);
+    const ANCHOR_TIME_MS = Date.UTC(2026, 8, 26, 23, 36, 0);
 
     function getLatestTimestamp() {
       const now = Date.now();
@@ -230,6 +230,7 @@
       };
 
       imgElement.src = targetUrl;
+      console.log(imgElement.src);
     }
 
     // Load initial frame (202608262336 or later step)
@@ -237,6 +238,8 @@
 
     // Check continuously every 6 minutes indefinitely
     setInterval(updateRadarFeed, SIX_MINUTES_MS);
+
+    
   </script>
 
 </body>
