@@ -110,7 +110,8 @@
       // Extract UTC parts (subtracts 8 hours automatically from local HKT)
       const YYYY = roundedDate.getUTCFullYear();
       const MM = String(roundedDate.getUTCMonth() + 1).padStart(2, '0');
-      const DD = String(roundedDate.getUTCDate()).padStart(2, '0');
+      //const DD = String(roundedDate.getUTCDate()).padStart(2, '0');
+      let DD = roundedDate.getUTCDate();
       const HH = String(roundedDate.getUTCHours()+8).padStart(2, '0');
       const mm = String(roundedDate.getUTCMinutes()).padStart(2, '0');
       let HKT = Number(HH) ;
@@ -118,6 +119,8 @@
       if( HKT >  24){ 
         HKT = Number(HH) - 24
         HKT = String(HKT).padStart(2,'0');
+        DD = String(DD+1).padStart(2, '0');
+        
         return `2d064nradar_${YYYY}${MM}${DD}${HKT}${mm}.jpg`;
       }else {
         return `2d064nradar_${YYYY}${MM}${DD}${HH}${mm}.jpg`;
