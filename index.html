@@ -94,7 +94,7 @@
     <div class="output-box" id="urlDisplay">Select a date/time above...</div>
 
     <div class="radar-viewport">
-      <img id="radarImg" alt="Radar Output" scr="" />
+      <img id="radarImg" alt="Radar Output" />
     </div>
   </div>
 
@@ -111,11 +111,15 @@
       const YYYY = roundedDate.getUTCFullYear();
       const MM = String(roundedDate.getUTCMonth() + 1).padStart(2, '0');
       const DD = String(roundedDate.getUTCDate()).padStart(2, '0');
-      const HH = String(roundedDate.getUTCHours()).padStart(2, '0');
+      const HH = String(roundedDate.getUTCHours()+8).padStart(2, '0');
       const mm = String(roundedDate.getUTCMinutes()).padStart(2, '0');
-
-      return `2d064nradar_${YYYY}${MM}${DD}${HH}${mm}.jpg`;
-    }
+      let HKT = Number(HH) ;
+      if( HKT >  12){ 
+        HKT = Number(HH) - 12
+        return `2d064nradar_${YYYY}${MM}${DD}${String(HKT)}${mm}.jpg`;
+      }else {
+        return `2d064nradar_${YYYY}${MM}${DD}${HH}${mm}.jpg`;
+      }
 
     function convertHktToHkoUrl() {
       const inputVal = document.getElementById("hktInput").value;
