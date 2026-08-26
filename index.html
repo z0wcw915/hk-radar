@@ -135,8 +135,8 @@
 
     // Set default input value to current time rounded down to 6 minutes
     const now = new Date();
-    const roundedNow = new Date(Math.floor(now.getTime() / (6 * 60 * 1000)) * (6 * 60 * 1000));
-    
+    //const roundedNow = new Date(Math.floor(now.getTime() / (6 * 60 * 1000)) * (6 * 60 * 1000));
+    const roundedNow = new Date(Math.floor(now.getTime() + (8 * 60 * 60 * 1000));
     // Format to YYYY-MM-THH:mm for datetime-local input
     const localIso = new Date(roundedNow.getTime() - (roundedNow.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
     document.getElementById("hktInput").value = localIso;
