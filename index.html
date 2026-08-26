@@ -186,18 +186,15 @@
     const RADAR_DIR = "https://www.hko.gov.hk/wxinfo/radars/rad_064_png/";
     const SIX_MINUTES_MS = 6 * 60 * 1000;
     
-    // Exact starting anchor timestamp: 2026-08-26 23:36:00 UTC
-    const ANCHOR_TIME_MS = Date.UTC(2026, 8, 26, 23, 36, 0);
+    // Starting anchor time: 2026-08-26 23:48:00 UTC
+    const START_TIME_MS = Date.UTC(2026, 7, 26, 23, 48, 0);
 
     function getLatestTimestamp() {
       const now = Date.now();
-      
-      // Calculate how many 6-minute intervals have passed since the start timestamp
-      const elapsedMs = Math.max(0, now - ANCHOR_TIME_MS);
+      const elapsedMs = Math.max(0, now - START_TIME_MS);
       const intervalsPassed = Math.floor(elapsedMs / SIX_MINUTES_MS);
       
-      // Generate current target date object aligned to the 6-minute sequence
-      const targetDate = new Date(ANCHOR_TIME_MS + (intervalsPassed * SIX_MINUTES_MS));
+      const targetDate = new Date(START_TIME_MS + (intervalsPassed * SIX_MINUTES_MS));
 
       const YYYY = targetDate.getUTCFullYear();
       const MM = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
@@ -216,30 +213,16 @@
       const updateTimeElement = document.getElementById("updateTime");
       const { timestampStr, formattedLocal } = getLatestTimestamp();
       
-      const targetUrl = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
-
-      // Fallback to latest unversioned image if the timestamped file hasn't landed on server yet
-      imgElement.onerror = function() {
-        this.onerror = null;
-        this.src = `${RADAR_DIR}2d064nradar.jpg?t=${Date.now()}`;
-        updateTimeElement.textContent = `${formattedLocal} (Fallback)`;
-      };
-
-      imgElement.onload = function() {
-        updateTimeElement.textContent = formattedLocal;
-      };
-
-      imgElement.src = targetUrl;
-      console.log(imgElement.src);
+      // Direct src assignment avoids CORB issues
+      imgElement.src = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
+      updateTimeElement.textContent = formattedLocal;
     }
 
-    // Load initial frame (202608262336 or later step)
+    // Initial load (Starts at 202608262348 or latest 6-min step)
     updateRadarFeed();
 
-    // Check continuously every 6 minutes indefinitely
+    // Auto-update every 6 minutes
     setInterval(updateRadarFeed, SIX_MINUTES_MS);
-
-    
   </script>
 
 </body>
