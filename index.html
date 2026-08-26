@@ -201,21 +201,27 @@
       const DD = String(targetDate.getUTCDate()).padStart(2, '0');
       const HH = String(targetDate.getUTCHours()).padStart(2, '0');
       const mm = String(targetDate.getUTCMinutes()).padStart(2, '0');
-
+      const formattedHKT = targetDate.toLocaleTimeString('en-HK', {
+        timeZone: 'Asia/Hong_Kong',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
       return {
         timestampStr: `${YYYY}${MM}${DD}${HH}${mm}`,
-        formattedLocal: targetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        formattedHKT: `${formattedHKT} HKT`
       };
     }
 
     function updateRadarFeed() {
       const imgElement = document.getElementById("radarImg");
       const updateTimeElement = document.getElementById("updateTime");
-      const { timestampStr, formattedLocal } = getLatestTimestamp();
+      const { timestampStr, formattedHKT } = getLatestTimestamp();
       
       // Direct src assignment avoids CORB issues
       imgElement.src = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
-      updateTimeElement.textContent = formattedLocal;
+      updateTimeElement.textContent = formattedHKT;
     }
 
     // Initial load (Starts at 202608262348 or latest 6-min step)
