@@ -186,28 +186,31 @@
     const RADAR_DIR = "https://www.hko.gov.hk/wxinfo/radars/rad_064_png/";
     const SIX_MINUTES_MS = 6 * 60 * 1000;
     
-    // Starting anchor time: 2026-08-26 23:48:00 UTC
-    const START_TIME_MS = Date.UTC(2026, 7, 26, 23, 48, 0);
-
     function getLatestTimestamp() {
-      const now = Date.now();
-      const elapsedMs = Math.max(0, now - START_TIME_MS);
-      const intervalsPassed = Math.floor(elapsedMs / SIX_MINUTES_MS);
+      const now = new Date();
       
-      const targetDate = new Date(START_TIME_MS + (intervalsPassed * SIX_MINUTES_MS));
+      // HKO updates radar every 6 minutes. 2-minute buffer accounts for server upload latency.
+      const bufferMs = 2 * 60 * 1000;
+      const targetTime = new Date(now.getTime() - bufferMs);
+    
+      // Round down to nearest 6-minute interval
+      const roundedTime = new Date(Math.floor(targetTime.getTime() / SIX_MINUTES_MS) * SIX_MINUTES_MS);
+    
+      // HKO server image names require UTC digits
+      const YYYY = roundedTime.getUTCFullYear();
+      const MM = String(roundedTime.getUTCMonth() + 1).padStart(2, '0');
+      const DD = String(roundedTime.getUTCDate()).padStart(2, '0');
+      const HH = String(roundedTime.getUTCHours()).padStart(2, '0');
+      const mm = String(roundedTime.getUTCMinutes()).padStart(2, '0');
 
-      const YYYY = targetDate.getUTCFullYear();
-      const MM = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
-      const DD = String(targetDate.getUTCDate()).padStart(2, '0');
-      const HH = String(targetDate.getUTCHours()).padStart(2, '0');
-      const mm = String(targetDate.getUTCMinutes()).padStart(2, '0');
-      const formattedHKT = targetDate.toLocaleTimeString('en-HK', {
+      // Display formatted timestamp explicitly in Hong Kong Time (24-hour format)
+      const formattedHKT = roundedTime.toLocaleTimeString('en-HK', {
         timeZone: 'Asia/Hong_Kong',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
       });
-      
+
       return {
         timestampStr: `${YYYY}${MM}${DD}${HH}${mm}`,
         formattedHKT: `${formattedHKT} HKT`
@@ -219,15 +222,14 @@
       const updateTimeElement = document.getElementById("updateTime");
       const { timestampStr, formattedHKT } = getLatestTimestamp();
       
-      // Direct src assignment avoids CORB issues
       imgElement.src = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
       updateTimeElement.textContent = formattedHKT;
     }
 
-    // Initial load (Starts at 202608262348 or latest 6-min step)
+    // Initial load on page open
     updateRadarFeed();
 
-    // Auto-update every 6 minutes
+    // Re-check system clock every 6 minutes
     setInterval(updateRadarFeed, SIX_MINUTES_MS);
   </script>
 
