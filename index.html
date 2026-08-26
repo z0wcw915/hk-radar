@@ -114,8 +114,9 @@
       const HH = String(roundedDate.getUTCHours()+8).padStart(2, '0');
       const mm = String(roundedDate.getUTCMinutes()).padStart(2, '0');
       let HKT = Number(HH) ;
-      if( HKT >  12){ 
-        HKT = Number(HH) - 12
+      console.log(HKT);
+      if( HKT >  24){ 
+        HKT = Number(HH) - 24
         return `2d064nradar_${YYYY}${MM}${DD}${String(HKT)}${mm}.jpg`;
       }else {
         return `2d064nradar_${YYYY}${MM}${DD}${HH}${mm}.jpg`;
