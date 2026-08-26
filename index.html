@@ -123,23 +123,15 @@
 
       // Create Date object assuming local HKT input
       const hktDate = new Date(inputVal);
-
+      console.log(hktDate);
       // Generate the HKO UTC filename
       const filename = hktToUtcFilename(hktDate);
       const fullUrl = `${RADAR_DIR}${filename}`;
-
+      console.log(hktDate);
       // Update UI
       document.getElementById("urlDisplay").textContent = fullUrl;
       document.getElementById("radarImg").src = fullUrl;
     }
-
-    // Set default input value to current time rounded down to 6 minutes
-    const now = new Date();
-    //const roundedNow = new Date(Math.floor(now.getTime() / (6 * 60 * 1000)) * (6 * 60 * 1000));
-    const roundedNow = new Date(Math.floor(now.getTime() + (8 * 60 * 60 * 1000));
-    // Format to YYYY-MM-THH:mm for datetime-local input
-    const localIso = new Date(roundedNow.getTime() - (roundedNow.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-    document.getElementById("hktInput").value = localIso;
     
     // Run initial conversion
     convertHktToHkoUrl();
