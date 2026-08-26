@@ -174,7 +174,7 @@
       <div class="info-group">
         Last Updated: <span id="updateTime">Updating...</span>
       </div>
-      <button class="btn" onclick="loadLatestRadarImage()">Refresh Now</button>
+      <button class="btn" onclick="updateRadarFeed()">Refresh Now</button>
     </div>
 
     <footer>
@@ -184,57 +184,59 @@
 
   <script>
     const RADAR_DIR = "https://www.hko.gov.hk/wxinfo/radars/rad_064_png/";
+    const SIX_MINUTES_MS = 6 * 60 * 1000;
     
-    function getTargetTimestamp() {
-      const now = new Date();
+    // Exact starting anchor timestamp: 2026-08-26 23:36:00 UTC
+    const ANCHOR_TIME_MS = Date.UTC(2026, 7, 26, 23, 36, 0);
+
+    function getLatestTimestamp() {
+      const now = Date.now();
       
-      // HKO updates radar frames every 6 minutes. Subtract a 2-minute buffer for processing/upload delay.
-      const bufferMs = 2 * 60 * 1000;
-      const targetTime = new Date(now.getTime() - bufferMs);
-    
-      // Round down to the nearest 6-minute boundary (360,000 ms)
-      const sixMinutesMs = 6 * 60 * 1000;
-      const roundedTime = new Date(Math.floor(targetTime.getTime() / sixMinutesMs) * sixMinutesMs);
-    
-      // Format to YYYYMMDDHHMM (UTC)
-      const YYYY = roundedTime.getUTCFullYear();
-      const MM = String(roundedTime.getUTCMonth() + 1).padStart(2, '0');
-      const DD = String(roundedTime.getUTCDate()).padStart(2, '0');
-      const HH = String(roundedTime.getUTCHours()).padStart(2, '0');
-      const mm = String(roundedTime.getUTCMinutes()).padStart(2, '0');
-    
+      // Calculate how many 6-minute intervals have passed since the start timestamp
+      const elapsedMs = Math.max(0, now - ANCHOR_TIME_MS);
+      const intervalsPassed = Math.floor(elapsedMs / SIX_MINUTES_MS);
+      
+      // Generate current target date object aligned to the 6-minute sequence
+      const targetDate = new Date(ANCHOR_TIME_MS + (intervalsPassed * SIX_MINUTES_MS));
+
+      const YYYY = targetDate.getUTCFullYear();
+      const MM = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
+      const DD = String(targetDate.getUTCDate()).padStart(2, '0');
+      const HH = String(targetDate.getUTCHours()).padStart(2, '0');
+      const mm = String(targetDate.getUTCMinutes()).padStart(2, '0');
+
       return {
         timestampStr: `${YYYY}${MM}${DD}${HH}${mm}`,
-        formattedLocal: roundedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        formattedLocal: targetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
     }
-    
-    function loadLatestRadarImage() {
+
+    function updateRadarFeed() {
       const imgElement = document.getElementById("radarImg");
       const updateTimeElement = document.getElementById("updateTime");
-      const { timestampStr, formattedLocal } = getTargetTimestamp();
+      const { timestampStr, formattedLocal } = getLatestTimestamp();
       
-      const timestampedUrl = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
-      
-      // Fallback strategy: If targeted file isn't available yet, load the live default asset
+      const targetUrl = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
+
+      // Fallback to latest unversioned image if the timestamped file hasn't landed on server yet
       imgElement.onerror = function() {
-        this.onerror = null; 
+        this.onerror = null;
         this.src = `${RADAR_DIR}2d064nradar.jpg?t=${Date.now()}`;
-        updateTimeElement.textContent = `Latest Available (Fallback)`;
+        updateTimeElement.textContent = `${formattedLocal} (Fallback)`;
       };
 
       imgElement.onload = function() {
         updateTimeElement.textContent = formattedLocal;
       };
-    
-      imgElement.src = timestampedUrl;
+
+      imgElement.src = targetUrl;
     }
-    
-    // Initial fetch
-    loadLatestRadarImage();
-    
-    // Check for updates every 6 minutes (360,000 ms)
-    setInterval(loadLatestRadarImage, 360000);
+
+    // Load initial frame (202608262336 or later step)
+    updateRadarFeed();
+
+    // Check continuously every 6 minutes indefinitely
+    setInterval(updateRadarFeed, SIX_MINUTES_MS);
   </script>
 
 </body>
