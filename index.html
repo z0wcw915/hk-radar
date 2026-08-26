@@ -174,7 +174,7 @@
       <div class="info-group">
         Last Updated: <span id="updateTime">Updating...</span>
       </div>
-      <button class="btn" onclick="refreshRadar()">Refresh Now</button>
+      <button class="btn" onclick="loadLatestRadarImage()">Refresh Now</button>
     </div>
 
     <footer>
@@ -183,54 +183,57 @@
   </div>
 
   <script>
-    // Direct link to the HKO 64km radar image asset
-    // Base HKO radar directory
     const RADAR_DIR = "https://www.hko.gov.hk/wxinfo/radars/rad_064_png/";
     
     function getTargetTimestamp() {
       const now = new Date();
       
-      // HKO filenames use UTC time. Subtract 2 minutes buffer for HKO's upload delay.
+      // HKO updates radar frames every 6 minutes. Subtract a 2-minute buffer for processing/upload delay.
       const bufferMs = 2 * 60 * 1000;
       const targetTime = new Date(now.getTime() - bufferMs);
     
-      // Round down to the nearest 6-minute interval (360,000 ms)
+      // Round down to the nearest 6-minute boundary (360,000 ms)
       const sixMinutesMs = 6 * 60 * 1000;
       const roundedTime = new Date(Math.floor(targetTime.getTime() / sixMinutesMs) * sixMinutesMs);
     
-      // Format parts to YYYYMMDDHHMM in UTC
+      // Format to YYYYMMDDHHMM (UTC)
       const YYYY = roundedTime.getUTCFullYear();
       const MM = String(roundedTime.getUTCMonth() + 1).padStart(2, '0');
       const DD = String(roundedTime.getUTCDate()).padStart(2, '0');
       const HH = String(roundedTime.getUTCHours()).padStart(2, '0');
       const mm = String(roundedTime.getUTCMinutes()).padStart(2, '0');
     
-      return `${YYYY}${MM}${DD}${HH}${mm}`;
+      return {
+        timestampStr: `${YYYY}${MM}${DD}${HH}${mm}`,
+        formattedLocal: roundedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
     }
     
     function loadLatestRadarImage() {
       const imgElement = document.getElementById("radarImg");
-      const timestamp = getTargetTimestamp();
+      const updateTimeElement = document.getElementById("updateTime");
+      const { timestampStr, formattedLocal } = getTargetTimestamp();
       
-      // 1. Construct the predicted timestamp URL
-      const timestampedUrl = `${RADAR_DIR}2d064nradar_${timestamp}.jpg`;
+      const timestampedUrl = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
       
-      // 2. Fallback strategy: If the specific file isn't uploaded yet (404), switch to static latest image
+      // Fallback strategy: If targeted file isn't available yet, load the live default asset
       imgElement.onerror = function() {
-        console.warn(`Timestamped image ${timestampedUrl} not found. Falling back to default latest frame.`);
-        // Remove handler to prevent infinite loop if the static image ever fails
         this.onerror = null; 
-        this.src = `${RADAR_DIR}2d064nradar.jpg?t=${new Date().getTime()}`;
+        this.src = `${RADAR_DIR}2d064nradar.jpg?t=${Date.now()}`;
+        updateTimeElement.textContent = `Latest Available (Fallback)`;
+      };
+
+      imgElement.onload = function() {
+        updateTimeElement.textContent = formattedLocal;
       };
     
-      // 3. Attempt to load the calculated timestamp URL
       imgElement.src = timestampedUrl;
     }
     
-    // Initial load
+    // Initial fetch
     loadLatestRadarImage();
     
-    // Auto-check for updates every 6 minutes
+    // Check for updates every 6 minutes (360,000 ms)
     setInterval(loadLatestRadarImage, 360000);
   </script>
 
