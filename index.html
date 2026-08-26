@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hong Kong Rain Radar (64 km)</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 10px;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .radar-viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background-color: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-viewport img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .status-overlay {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background-color: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .controls {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .info-group {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .info-group span {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    footer {
+      padding: 16px 20px;
+      background-color: rgba(15, 23, 42, 0.4);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      border-top: 1px solid var(--border-color);
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Hong Kong Rain Radar</h1>
+      <p class="subtitle">64 km Range (3 km Height Cut)</p>
+    </header>
+
+    <div class="radar-viewport">
+      <div class="status-overlay">
+        <div class="status-dot"></div>
+        Live Feed
+      </div>
+      <img id="radarImg" alt="HKO 64km Radar Imagery" />
+    </div>
+
+    <div class="controls">
+      <div class="info-group">
+        Last Updated: <span id="updateTime">Updating...</span>
+      </div>
+      <button class="btn" onclick="refreshRadar()">Refresh Now</button>
+    </div>
+
+    <footer>
+      Data provided by <a href="https://www.hko.gov.hk/en/wxinfo/radars/radar_range1.htm" target="_blank" rel="noopener">Hong Kong Observatory</a>. Auto-updates every 6 minutes.
+    </footer>
+  </div>
+
+  <script>
+    // Direct link to the HKO 64km radar image asset
+    const RADAR_URL = "https://www.hko.gov.hk/wxinfo/radars/rad_64_256/rad_64_256.gif";
+
+    function refreshRadar() {
+      const img = document.getElementById("radarImg");
+      const timeSpan = document.getElementById("updateTime");
+      
+      // Append timestamp parameter to bypass browser caching
+      const timestamp = new Date().getTime();
+      img.src = `${RADAR_URL}?t=${timestamp}`;
+
+      const now = new Date();
+      timeSpan.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // Initial load
+    refreshRadar();
+
+    // Auto-refresh every 6 minutes (360,000 ms) matching HKO refresh cycle
+    setInterval(refreshRadar, 360000);
+  </script>
+
+</body>
+</html>
