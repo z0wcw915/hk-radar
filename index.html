@@ -199,8 +199,8 @@
 
   <script>
     const RADAR_DIR = "https://www.hko.gov.hk/wxinfo/radars/rad_064_png/";
-    const SIX_MINUTES_MS = 6 * 60;
-    const MAX_FRAMES = 10; // Keep a sliding window of the latest 10 frames
+    const SIX_MINUTES_MS = 6 * 60 * 1000;
+    const MAX_FRAMES = 10;
 
     let frameSequence = [];
     let currentIndex = 0;
@@ -209,25 +209,26 @@
     function buildFrameList() {
       const now = new Date();
       
-      // 2-minute buffer for server image upload
-      const bufferMs = 2 * 60;
+      // 2-minute buffer for server upload delay
+      const bufferMs = 2 * 60 * 1000;
       const latestTime = new Date(now.getTime() - bufferMs);
       
-      // Floor latest frame to 6-minute interval
+      // Align to nearest 6-minute interval
       const roundedLatest = new Date(Math.floor(latestTime.getTime() / SIX_MINUTES_MS) * SIX_MINUTES_MS);
 
       const frames = [];
       
-      // Generate sliding window: oldest drops off as new ones are added at the end
       for (let i = MAX_FRAMES - 1; i >= 0; i--) {
         const frameDate = new Date(roundedLatest.getTime() - (i * SIX_MINUTES_MS));
         
+        // 1. UTC Timestamp for HKO Image URL
         const YYYY = frameDate.getUTCFullYear();
         const MM = String(frameDate.getUTCMonth() + 1).padStart(2, '0');
         const DD = String(frameDate.getUTCDate()).padStart(2, '0');
         const HH = String(frameDate.getUTCHours()).padStart(2, '0');
         const mm = String(frameDate.getUTCMinutes()).padStart(2, '0');
 
+        // 2. Local Display Time (HKT / UTC+8)
         const formattedHKT = frameDate.toLocaleTimeString('en-HK', {
           timeZone: 'Asia/Hong_Kong',
           hour: '2-digit',
@@ -264,7 +265,7 @@
 
     function syncFrames() {
       frameSequence = buildFrameList();
-      currentIndex = frameSequence.length - 1; // Always jump to newest frame on refresh
+      currentIndex = frameSequence.length - 1;
       renderCurrentFrame();
     }
 
@@ -297,10 +298,10 @@
       }
     }
 
-    // Initial setup
+    // Load initial frames
     syncFrames();
 
-    // Re-check clock every 6 minutes to pop oldest image and append the newest one
+    // Check every 6 minutes to pop oldest frame and append newest
     setInterval(syncFrames, SIX_MINUTES_MS);
   </script>
 
