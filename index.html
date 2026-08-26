@@ -185,25 +185,25 @@
   <script>
     const RADAR_DIR = "https://www.hko.gov.hk/wxinfo/radars/rad_064_png/";
     const SIX_MINUTES_MS = 6 * 60 * 1000;
-    
+
     function getLatestTimestamp() {
       const now = new Date();
-      
-      // HKO updates radar every 6 minutes. 2-minute buffer accounts for server upload latency.
+
+      // 2-minute buffer for HKO server generation delay
       const bufferMs = 2 * 60 * 1000;
       const targetTime = new Date(now.getTime() - bufferMs);
-    
-      // Round down to nearest 6-minute interval
+
+      // Floor to the nearest 6-minute boundary
       const roundedTime = new Date(Math.floor(targetTime.getTime() / SIX_MINUTES_MS) * SIX_MINUTES_MS);
-    
-      // HKO server image names require UTC digits
+
+      // Formats URL string using UTC digits (e.g. 202608261600)
       const YYYY = roundedTime.getUTCFullYear();
       const MM = String(roundedTime.getUTCMonth() + 1).padStart(2, '0');
       const DD = String(roundedTime.getUTCDate()).padStart(2, '0');
       const HH = String(roundedTime.getUTCHours()).padStart(2, '0');
       const mm = String(roundedTime.getUTCMinutes()).padStart(2, '0');
 
-      // Display formatted timestamp explicitly in Hong Kong Time (24-hour format)
+      // Formats display string in Hong Kong Time (UTC+8)
       const formattedHKT = roundedTime.toLocaleTimeString('en-HK', {
         timeZone: 'Asia/Hong_Kong',
         hour: '2-digit',
@@ -221,15 +221,15 @@
       const imgElement = document.getElementById("radarImg");
       const updateTimeElement = document.getElementById("updateTime");
       const { timestampStr, formattedHKT } = getLatestTimestamp();
-      
+
       imgElement.src = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
       updateTimeElement.textContent = formattedHKT;
     }
 
-    // Initial load on page open
+    // Initial load
     updateRadarFeed();
 
-    // Re-check system clock every 6 minutes
+    // Auto-update every 6 minutes
     setInterval(updateRadarFeed, SIX_MINUTES_MS);
   </script>
 
