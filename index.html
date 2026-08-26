@@ -119,11 +119,16 @@
       font-weight: 500;
     }
 
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
     .btn {
       background-color: var(--accent);
       color: #0f172a;
       border: none;
-      padding: 8px 16px;
+      padding: 8px 14px;
       font-size: 0.875rem;
       font-weight: 600;
       border-radius: 6px;
@@ -133,6 +138,11 @@
 
     .btn:hover {
       opacity: 0.9;
+    }
+
+    .btn-secondary {
+      background-color: var(--border-color);
+      color: var(--text-main);
     }
 
     footer {
@@ -165,16 +175,21 @@
     <div class="radar-viewport">
       <div class="status-overlay">
         <div class="status-dot"></div>
-        Live Feed
+        <span id="feedStatus">Live Feed</span>
       </div>
       <img id="radarImg" alt="HKO 64km Radar Imagery" />
     </div>
 
     <div class="controls">
       <div class="info-group">
-        Last Updated: <span id="updateTime">Updating...</span>
+        Frame Time: <span id="updateTime">Updating...</span>
       </div>
-      <button class="btn" onclick="updateRadarFeed()">Refresh Now</button>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="prevFrame()">◀ Prev</button>
+        <button class="btn btn-secondary" onclick="togglePlay()" id="playBtn">▶ Play</button>
+        <button class="btn btn-secondary" onclick="nextFrame()">Next ▶</button>
+        <button class="btn" onclick="syncFrames()">Refresh</button>
+      </div>
     </div>
 
     <footer>
@@ -185,52 +200,108 @@
   <script>
     const RADAR_DIR = "https://www.hko.gov.hk/wxinfo/radars/rad_064_png/";
     const SIX_MINUTES_MS = 6 * 60 * 1000;
+    const MAX_FRAMES = 10; // Keep a sliding window of the latest 10 frames
 
-    function getLatestTimestamp() {
+    let frameSequence = [];
+    let currentIndex = 0;
+    let playInterval = null;
+
+    function buildFrameList() {
       const now = new Date();
-
-      // 2-minute buffer for HKO server generation delay
+      
+      // 2-minute buffer for server image upload
       const bufferMs = 2 * 60 * 1000;
-      const targetTime = new Date(now.getTime() - bufferMs);
+      const latestTime = new Date(now.getTime() - bufferMs);
+      
+      // Floor latest frame to 6-minute interval
+      const roundedLatest = new Date(Math.floor(latestTime.getTime() / SIX_MINUTES_MS) * SIX_MINUTES_MS);
 
-      // Floor to the nearest 6-minute boundary
-      const roundedTime = new Date(Math.floor(targetTime.getTime() / SIX_MINUTES_MS) * SIX_MINUTES_MS);
+      const frames = [];
+      
+      // Generate sliding window: oldest drops off as new ones are added at the end
+      for (let i = MAX_FRAMES - 1; i >= 0; i--) {
+        const frameDate = new Date(roundedLatest.getTime() - (i * SIX_MINUTES_MS));
+        
+        const YYYY = frameDate.getUTCFullYear();
+        const MM = String(frameDate.getUTCMonth() + 1).padStart(2, '0');
+        const DD = String(frameDate.getUTCDate()).padStart(2, '0');
+        const HH = String(frameDate.getUTCHours()).padStart(2, '0');
+        const mm = String(frameDate.getUTCMinutes()).padStart(2, '0');
 
-      // Formats URL string using UTC digits (e.g. 202608261600)
-      const YYYY = roundedTime.getUTCFullYear();
-      const MM = String(roundedTime.getUTCMonth() + 1).padStart(2, '0');
-      const DD = String(roundedTime.getUTCDate()).padStart(2, '0');
-      const HH = String(roundedTime.getUTCHours()).padStart(2, '0');
-      const mm = String(roundedTime.getUTCMinutes()).padStart(2, '0');
+        const formattedHKT = frameDate.toLocaleTimeString('en-HK', {
+          timeZone: 'Asia/Hong_Kong',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
 
-      // Formats display string in Hong Kong Time (UTC+8)
-      const formattedHKT = roundedTime.toLocaleTimeString('en-HK', {
-        timeZone: 'Asia/Hong_Kong',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
+        frames.push({
+          url: `${RADAR_DIR}2d064nradar_${YYYY}${MM}${DD}${HH}${mm}.jpg`,
+          displayTime: `${formattedHKT} HKT`
+        });
+      }
 
-      return {
-        timestampStr: `${YYYY}${MM}${DD}${HH}${mm}`,
-        formattedHKT: `${formattedHKT} HKT`
-      };
+      return frames;
     }
 
-    function updateRadarFeed() {
+    function renderCurrentFrame() {
+      if (frameSequence.length === 0) return;
+      const frame = frameSequence[currentIndex];
+      
       const imgElement = document.getElementById("radarImg");
-      const updateTimeElement = document.getElementById("updateTime");
-      const { timestampStr, formattedHKT } = getLatestTimestamp();
+      const timeElement = document.getElementById("updateTime");
+      const statusElement = document.getElementById("feedStatus");
 
-      imgElement.src = `${RADAR_DIR}2d064nradar_${timestampStr}.jpg`;
-      updateTimeElement.textContent = formattedHKT;
+      imgElement.src = frame.url;
+      timeElement.textContent = frame.displayTime;
+
+      if (currentIndex === frameSequence.length - 1) {
+        statusElement.textContent = "Live Feed";
+      } else {
+        statusElement.textContent = `History (${currentIndex + 1}/${frameSequence.length})`;
+      }
     }
 
-    // Initial load
-    updateRadarFeed();
+    function syncFrames() {
+      frameSequence = buildFrameList();
+      currentIndex = frameSequence.length - 1; // Always jump to newest frame on refresh
+      renderCurrentFrame();
+    }
 
-    // Auto-update every 6 minutes
-    setInterval(updateRadarFeed, SIX_MINUTES_MS);
+    function prevFrame() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderCurrentFrame();
+      }
+    }
+
+    function nextFrame() {
+      if (currentIndex < frameSequence.length - 1) {
+        currentIndex++;
+        renderCurrentFrame();
+      }
+    }
+
+    function togglePlay() {
+      const playBtn = document.getElementById("playBtn");
+      if (playInterval) {
+        clearInterval(playInterval);
+        playInterval = null;
+        playBtn.textContent = "▶ Play";
+      } else {
+        playBtn.textContent = "⏸ Pause";
+        playInterval = setInterval(() => {
+          currentIndex = (currentIndex + 1) % frameSequence.length;
+          renderCurrentFrame();
+        }, 800);
+      }
+    }
+
+    // Initial setup
+    syncFrames();
+
+    // Re-check clock every 6 minutes to pop oldest image and append the newest one
+    setInterval(syncFrames, SIX_MINUTES_MS);
   </script>
 
 </body>
