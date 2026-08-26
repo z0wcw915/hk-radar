@@ -117,7 +117,8 @@
       console.log(HKT);
       if( HKT >  24){ 
         HKT = Number(HH) - 24
-        return `2d064nradar_${YYYY}${MM}${DD}${String(HKT)}${mm}.jpg`;
+        HKT = String(HKT).padStart(2,'0');
+        return `2d064nradar_${YYYY}${MM}${DD}${HKT}${mm}.jpg`;
       }else {
         return `2d064nradar_${YYYY}${MM}${DD}${HH}${mm}.jpg`;
       }
